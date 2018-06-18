@@ -1,0 +1,23 @@
+{
+  "expo": {
+    "name": "eJuiceCalc",
+    "sdkVersion": "24.0.0",
+    "icon": "./icon.png",
+    "orientation": "portrait",
+    "loading": {
+      "icon": "./icon_rounded.png"
+    },
+    "androidStatusBar": {
+      "backgroundColor": "#ffffff"
+    },
+    "ios": {
+      "bundleIdentifier": "com.dan.dan",
+      "buildNumber": "1.0.10",
+      "supportsTablet": true
+    },
+    "android": {
+      "package": "com.dan.dan",
+      "versionCode": 16
+    }
+  }
+}

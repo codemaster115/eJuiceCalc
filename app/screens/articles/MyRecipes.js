@@ -13,8 +13,9 @@ import {SocialBar} from '../../components';
 import {data} from '../../data';
 let moment = require('moment');
 
+import { connect } from 'react-redux';
 
-export class Articles3 extends React.Component {
+class MyRecipesPage extends React.Component {
   static navigationOptions = {
     title: 'My Recipes'.toUpperCase()
   };
@@ -23,26 +24,43 @@ export class Articles3 extends React.Component {
     super(props);
     this.data = data.getArticles();
     this.renderItem = this._renderItem.bind(this);
+    this.renderHeader = this._renderHeader.bind(this);
   }
 
   _keyExtractor(post, index) {
     return post.id;
   }
 
+  //Mike Fix This - Search header for the top of public Recipes
+  _renderHeader() {
+    return (
+      <View style={styles.searchContainer}>
+        <RkTextInput autoCapitalize='none'
+                      autoCorrect={false}
+                      onChange={(event) => this._filter(event.nativeEvent.text)}
+                      label={<RkText rkType='awesome'>{FontAwesome.search}</RkText>}
+                      rkType='row'
+                      placeholder='Search'/>
+      </View>
+    )
+  }
+
   _renderItem(info) {
+    const { recipe } = info.item;
+
     return (
       <TouchableOpacity
         delayPressIn={70}
         activeOpacity={0.8}
-        onPress={() => this.props.navigation.navigate('Article', {id: info.item.id})}>
+        onPress={() => this.props.navigation.navigate('RecipeDetail', {id: info.item.id})}>
         <RkCard style={styles.card}>
           <View rkCardHeader>
             <View>
-              <RkText rkType='header4'>{info.item.header}</RkText>
-              <RkText rkType='secondary2 hintColor'>{moment().add(info.item.time, 'seconds').fromNow()}</RkText>
+              <RkText rkType='header4'>{recipe.name}</RkText>
+              <RkText rkType='secondary2 hintColor'>{moment(recipe.createdDate).fromNow()}</RkText>
             </View>
           </View>
-          <Image rkCardImg source={info.item.photo}/>
+          <Image rkCardImg source={{uri: recipe.imageUrl}}/>
           <View style={styles.footer} rkCardFooter>
             <SocialBar/>
           </View >
@@ -54,7 +72,8 @@ export class Articles3 extends React.Component {
   render() {
     return (
       <FlatList
-        data={this.data}
+        data={this.props.recipes}
+        renderHeader={this.renderHeader}
         renderItem={this.renderItem}
         keyExtractor={this._keyExtractor}
         style={styles.container}/>
@@ -68,6 +87,13 @@ let styles = RkStyleSheet.create(theme => ({
     paddingHorizontal: 14,
     paddingVertical: 8
   },
+  searchContainer: {
+    backgroundColor: theme.colors.screen.bold,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    height: 60,
+    alignItems: 'center'
+  },
   card: {
     marginVertical: 8
   },
@@ -78,3 +104,9 @@ let styles = RkStyleSheet.create(theme => ({
     marginTop: 5
   }
 }));
+
+const mapStateToProps = state => ({
+  recipes: state.recipe.recipes
+});
+
+export const MyRecipes =  connect(mapStateToProps)(MyRecipesPage);

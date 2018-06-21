@@ -12,10 +12,20 @@ import {data} from './data'
 import {AppLoading, Font} from 'expo';
 import {View} from "react-native";
 import { Provider } from 'react-redux';
-import { store } from './redux/app-redux';
+import store from './store';
+import * as firebase from 'firebase';
 
 bootstrap();
 data.populateData();
+
+var config = {
+  apiKey: "AIzaSyDU_tKmSl30mzS6ze7xPGeNQfXN6_99uro",
+  authDomain: "ejuicecalc-45fe3.firebaseapp.com",
+  projectId: "ejuicecalc-45fe3",
+  databaseURL: "https://ejuicecalc-45fe3.firebaseio.com/",
+  storageBucket: "ejuicecalc-45fe3.appspot.com"
+};
+firebase.initializeApp(config);
 
 function getCurrentRouteName(navigationState) {
   if (!navigationState) {

@@ -2,22 +2,17 @@ import React from 'react';
 import {
   ScrollView,
   View,
-  TouchableOpacity,
   StyleSheet,
-  Keyboard
+  FlatList
 } from 'react-native';
 import {
   RkText,
   RkStyleSheet,
-  RkTextInput,
-  RkTheme
+  RkTextInput
 } from 'react-native-ui-kitten';
-import {
-  RkSwitch,
-  FindFriends
-} from '../../components';
-import {FontAwesome} from '../../assets/icons';
-import {GradientButton} from '../../components';
+import { GradientButton } from '../../components';
+import FlavorItem from '../../components/FlavorItem';
+import _ from 'lodash';
 
 export class Calculator extends React.Component {
   static navigationOptions = {
@@ -37,12 +32,17 @@ export class Calculator extends React.Component {
       nicPG: '50',
       nicVG: '50',
       flavour: '20',
-
+      flavors: [],
+      flavorsSum: {
+        all: '',
+        pg: '',
+        vg: '',
+      },
       //Default Weights
       weightVG: 1.249,
       weightPG: 1.0361,
       drops: 30,
-      nicPureMg: 1.01      
+      nicPureMg: 1.01
     }
   }
 
@@ -107,7 +107,7 @@ export class Calculator extends React.Component {
     const amountPGdrops = this.ml_to_drops(amountPG);
     //PG Grams
     const amountPGgrams = this.ml_to_grams_pg(amountPG);
-
+    const amountPGgramsRounded = amountPGgrams.toFixed(3);
     //NIC Values
     const amountNIC = this.nicPercentage();
     //NIC ML
@@ -120,19 +120,57 @@ export class Calculator extends React.Component {
     const amountNICgrams = this.ml_to_grams_nic(amountNICml);
     const amountNICgramsRounded = amountNICgrams.toFixed(3);
 
+    const flavors = this.state.flavors.map(flavor => {
+      const amountML = this.percent_to_ml(flavor.percentage);
+      const amountMLRounded = amountML.toFixed(3);
+      const amountdrops = this.ml_to_drops(amountML.toFixed(0));
+      const amountgrams = flavor.weight_src == "PG" ? this.ml_to_grams_pg(amountML) : this.ml_to_grams_vg(amountML);
 
-      this.props.navigation.navigate('Recipe1', {
-        amountVG: amountVGmlrounded,
-        amountVGdrops: amountVGdrops,
-        amountVGgrams: amountVGgramsRounded,
-        amountPG: amountPGrounded,
-        amountPGdrops: amountPGdrops,
-        amountPGgrams: amountPGgrams,
-        amountNIC: amountNIC,
-        amountNICml: amountNICRounded,
-        amountNICdrops: amountNICdrops,
-        amountNICgrams: amountNICgramsRounded
-      });
+      return {
+        ...flavor,
+        amountMLRounded,
+        amountdrops,
+        amountgrams
+      }
+    });
+
+    const grams = amountVG + amountPG + amountNICgrams + _.sumBy(flavors, (flavor) => flavor.amountgrams)
+    this.props.navigation.navigate('Recipe1', {
+      amountML: this.state.amount,
+      amountdrops: this.ml_to_drops(this.state.amount),
+      amountgrams: grams.toFixed(3),
+      amountVG: amountVGmlrounded,
+      amountVGdrops: amountVGdrops,
+      amountVGgrams: amountVGgramsRounded,
+      amountPG: amountPGrounded,
+      amountPGdrops: amountPGdrops,
+      amountPGgrams: amountPGgramsRounded,
+      amountNIC: amountNIC,
+      amountNICml: amountNICRounded,
+      amountNICdrops: amountNICdrops,
+      amountNICgrams: amountNICgramsRounded,
+      flavors
+    });
+  }
+
+  addFlavor = () => {
+    const newflavors = this.state.flavors;
+    newflavors.push({
+      name: "Flavor " + (newflavors.length + 1),
+      percentage: 0,
+      weight_src: "PG",
+      custom_weight: 1,
+      id: _.uniqueId()
+    });
+
+    this.setState({flavors: newflavors})
+  }
+
+  removeFlavor = (id) => {
+    const prevFlavors = this.state.flavors;
+    this.setState({
+      flavors: _.filter(prevFlavors, flavor => (flavor.id == id) ? false : true)
+    });
   }
 
   ml_to_grams_vg = (ml) => {
@@ -152,7 +190,7 @@ export class Calculator extends React.Component {
     const { amount, vg } = this.state;
     const np = this.nicPercentageLiquidsVG()
     console.log("This is the nicpercentage of VG" + np)
-    const amountVG = amount * ((parseFloat(vg) - /*parseFloat(this.state.flavorsSum.vg) - */parseFloat(np)) / 100)
+    const amountVG = amount * ((parseFloat(vg) - parseFloat(this.flavorsSum(this.state.flavors).vg) - parseFloat(np)) / 100)
     return amountVG
   }
 
@@ -160,7 +198,7 @@ export class Calculator extends React.Component {
     const { amount, pg } = this.state;
     const np = this.nicPercentageLiquidsPG()
     console.log("This is the nicpercentage of pg" + np)
-    const amountPG = amount * ((parseFloat(pg) - /*parseFloat(this.state.flavorsSum.pg) - */parseFloat(np)) / 100)
+    const amountPG = amount * ((parseFloat(pg) - parseFloat(this.flavorsSum(this.state.flavors).pg) - parseFloat(np)) / 100)
     return amountPG
   }
   
@@ -224,21 +262,21 @@ export class Calculator extends React.Component {
     return this.state.amount * ( parseFloat(percentage) / 100 );
   }
 
-  flavorsSum  = () => {
-      return {
-        all: _.sumBy(this.flavors, function(o){
-          return parseFloat(o.percentage);
-        }),
-        // Sum VG flavors
-        pg: _.sumBy(this.flavors, function(o){
-          return (o.weight_src == "VG") ? 0: parseFloat(o.percentage);
-        }),
-        //Sum PG flavors
-        vg: _.sumBy(this.flavors, function(o){
-          return (o.weight_src == "VG") ? parseFloat(o.percentage): 0;
-        })
-      };
-  }  
+  flavorsSum = (flavors) => {
+    return {
+      all: _.sumBy(flavors, function(o){
+        return parseFloat(o.percentage);
+      }),
+      // Sum VG flavors
+      pg: _.sumBy(flavors, function(o){
+        return (o.weight_src == "VG") ? 0: parseFloat(o.percentage);
+      }),
+      //Sum PG flavors
+      vg: _.sumBy(flavors, function(o){
+        return (o.weight_src == "VG") ? parseFloat(o.percentage): 0;
+      })
+    };
+  }
 
   render() {
     return (
@@ -300,7 +338,7 @@ export class Calculator extends React.Component {
                            onChangeText={(text) => this.setState({nicPG: text})}
                            onSubmitEditing={this.updateThree}
                            onBlur={this.updateThree}/>
-            </View>   
+            </View>
             <View style={styles.row}>
               <RkTextInput label='Nicotine VG (%)'
                            value={this.state.nicVG}
@@ -312,13 +350,55 @@ export class Calculator extends React.Component {
             </View>
             <View style={[styles.row, styles.heading]}>
               <RkText rkType='primary header6'>Flavours</RkText>
-            </View>            
+            </View>
             <View style={styles.row}>
-              <RkTextInput label='Flavour 1 (%)'
-                           value={this.state.flavour}
-                           keyboardType='numeric'
-                           rkType='right clear'
-                           onChangeText={(text) => this.setState({flavour: text})}/>
+              <FlatList
+                extraData={this.state}
+                data={this.state.flavors}
+                renderItem={({item}) => 
+                  <FlavorItem
+                    flavor={item}
+                    deleteFlavor={() => this.deleteFlavor(item.id)}
+                    onChangeName={(value) => {
+                      const flavors = this.state.flavors.map(flavor => {
+                        if (flavor.id == item.id) {
+                          const newFlavor = flavor;
+                          newFlavor.name = value;
+                          return newFlavor;
+                        } else {
+                          return flavor
+                        }
+                      });
+                      this.setState({flavors});
+                    }}
+                    onChangePercentage={(value) => {
+                      const flavors = this.state.flavors.map(flavor => {
+                        if (flavor.id == item.id) {
+                          const newFlavor = flavor;
+                          newFlavor.percentage = value;
+                          return newFlavor;
+                        } else {
+                          return flavor
+                        }
+                      });
+                      this.setState({flavors});
+                    }}
+                    onChangeWeight={(itemValue) => {
+                      const flavors = this.state.flavors.map(flavor => {
+                        if (flavor.id == item.id) {
+                          const newFlavor = flavor;
+                          newFlavor.weight_src = itemValue;
+                          return newFlavor;
+                        } else {
+                          return flavor
+                        }
+                      });
+                      this.setState({flavors});
+                    }}
+                    onPressRemove={() => this.removeFlavor(item.id)}
+                  />
+                }
+              />
             </View>
             <View style={styles.row}>
               <RkTextInput label='Extra Diluent (%)'
@@ -326,10 +406,10 @@ export class Calculator extends React.Component {
                            keyboardType='numeric'
                            rkType='right clear'
                            onChangeText={(text) => this.setState({diluent: text})}/>
-            </View>            
+            </View>
         </View>
-        <GradientButton onPress={this.calculate}
-           rkType='large' style={styles.button} text='Calculate'/>
+        <GradientButton rkType='medium' style={styles.button} text='Add Flavor' onPress={this.addFlavor}/>
+        <GradientButton rkType='medium' style={styles.button} text='Calculate' onPress={this.calculate}/>
       </ScrollView>
     )
   }
@@ -368,7 +448,7 @@ let styles = RkStyleSheet.create(theme => ({
   },
   button: {
     marginHorizontal: 16,
-    marginBottom: 32
+    marginBottom: 20
   },
     red: {
     color: '#ff0000'

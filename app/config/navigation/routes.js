@@ -35,7 +35,7 @@ export const MainRoutes = [
     id: 'MyRecipes',
     title: 'My Recipes',
     icon: FontIcons.article,
-    screen: Screens.Articles3,
+    screen: Screens.MyRecipes,
     children: [
       {
         id: 'Articles2',
@@ -44,9 +44,9 @@ export const MainRoutes = [
         children: []
       },
       {
-        id: 'Article',
-        title: 'Article View',
-        screen: Screens.Article,
+        id: 'RecipeDetail',
+        title: 'Recipe View',
+        screen: Screens.RecipeDetail,
         children: []
       },
       {
@@ -61,12 +61,12 @@ export const MainRoutes = [
     id: 'PublicRecipes',
     title: 'Recipes',
     icon: FontIcons.navigation,
-    screen: Screens.Articles4,
+    screen: Screens.Recipes,
     children: [
       {
-        id: 'Article',
-        title: 'Article View',
-        screen: Screens.Article,
+        id: 'RecipeDetail',
+        title: 'Recipe View',
+        screen: Screens.RecipeDetail,
         children: []
       },
       {

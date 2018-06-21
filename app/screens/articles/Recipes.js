@@ -3,19 +3,23 @@ import {
   FlatList,
   Image,
   View,
-  TouchableOpacity,
-  StyleSheet
+  TouchableOpacity
 } from 'react-native';
 import {
   RkText,
-  RkCard, RkStyleSheet, RkTextInput
+  RkCard,
+  RkStyleSheet,
+  RkTextInput
 } from 'react-native-ui-kitten';
-import _ from 'lodash';
 import {SocialBar} from '../../components';
 import {data} from '../../data';
 import {FontAwesome} from '../../assets/icons';
 
-export class Articles4 extends React.Component {
+import { connect } from 'react-redux';
+import { watchRecipes } from '../../actions/recipe';
+import moment from 'moment';
+
+class RecipesPage extends React.Component {
   static navigationOptions = {
     title: 'Recipes: NUMBER'.toUpperCase()
   };
@@ -25,6 +29,8 @@ export class Articles4 extends React.Component {
     this.data = data.getArticles('fact');
     this.renderHeader = this._renderHeader.bind(this);
     this.renderItem = this._renderItem.bind(this);
+
+    this.props.dispatch(watchRecipes());
   }
 
   _keyExtractor(post) {
@@ -43,25 +49,28 @@ export class Articles4 extends React.Component {
                      placeholder='Search'/>
       </View>
     )
-  }  
+  }
 
   _renderItem(info) {
+    const { recipe } = info.item;
+
     return (
       <TouchableOpacity
         delayPressIn={70}
         activeOpacity={0.8}
-        onPress={() => this.props.navigation.navigate('Article', {id: info.item.id})}>
+        onPress={() => this.props.navigation.navigate('RecipeDetail', {id: info.item.id})}>
       	<RkCard rkType='horizontal' style={styles.card}>
-        	<Image rkCardImg source={info.item.photo}/>
+        	<Image rkCardImg source={{uri: recipe.imageUrl}}/>
 
           <View rkCardContent>
-            <RkText numberOfLines={1} rkType='header6'>{info.item.header}</RkText>
-            <RkText rkType='secondary6 hintColor'>{`${info.item.user.firstName} ${info.item.user.lastName}`}</RkText>
-            <RkText style={styles.post} numberOfLines={2} rkType='secondary1'>{info.item.text}</RkText>
+            <RkText numberOfLines={1} rkType='header6'>{recipe.name}</RkText>
+            <RkText rkType='secondary2 hintColor'>{moment(recipe.createdDate).fromNow()}</RkText>
+            {/* <RkText rkType='secondary6 hintColor'>{recipe.calc.amountPG}</RkText>
+            <RkText style={styles.post} numberOfLines={2} rkType='secondary1'>{recipe.calc.amountVG}</RkText> */}
           </View>
           <View rkCardFooter>
             <SocialBar rkType='space' showLabel={true}/>
-          </View >
+          </View>
         </RkCard>
       </TouchableOpacity>
     )
@@ -71,7 +80,7 @@ export class Articles4 extends React.Component {
     return (
       <View>
         <FlatList
-          data={this.data}
+          data={this.props.recipes.reverse()}
           renderHeader={this.renderHeader}
           renderItem={this.renderItem}
           keyExtractor={this._keyExtractor}
@@ -102,3 +111,9 @@ let styles = RkStyleSheet.create(theme => ({
     marginTop: 13
   }
 }));
+
+const mapStateToProps = state => ({
+  recipes: state.recipe.recipes
+});
+
+export const Recipes = connect(mapStateToProps)(RecipesPage);
